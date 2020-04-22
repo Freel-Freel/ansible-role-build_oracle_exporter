@@ -1,0 +1,21 @@
+---
+connections:
+  - connection: MONITORING/ORACLE_EXPORTER@pele5:1521/armsdev2
+    database: armsdev2
+    instance: armsdev2
+    alertlog:
+      - file: /data/oracle/diag/rdbms/develop/DEVELOP/trace/alert_DEVELOP.log
+        ignoreora:
+          - ORA-00001
+          - ORA-01033
+          - ORA-01041
+          - ORA-01089
+          - ORA-01555
+          - ORA-28
+          - ORA-235
+          - ORA-609
+          - ORA-3136
+    queries:
+    - name: sample1
+      sql: select 1 from dual
+

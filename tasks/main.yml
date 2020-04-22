@@ -1,0 +1,84 @@
+---
+# tasks file for ansible-role-oracle_exporter
+
+- name: added repo 'epel-release'
+  yum:
+    name: epel-release
+    state: present
+  become_user: root
+
+- name: install 'go'
+  yum:
+    name: go
+    state: present
+  become_user: root
+
+- name: create folders
+  file:
+    path: "/home/vagrant/{{ item }}"
+    state: directory
+  with_items:
+    - "pkgconfig"
+    - "goapp"
+    - "goapp/goapp"
+    - "goapp/pkg"
+    - "goapp/src"
+  become_user: vagrant
+
+- name: deploy config
+  template:
+    src: "{{ item.config }}.j2"
+    dest: "{{ item.config_dst }}"
+  with_items:
+    -
+      config: oci8.pc
+      config_dst: /home/vagrant/pkgconfig/oci8.pc
+    -
+      config: oracle.conf
+      config_dst: /home/vagrant/goapp/oracle.conf
+
+- name: clone github repo
+  command: go get -u -v github.com/freenetdigital/prometheus_oracle_exporter
+  args:
+  environment:
+    ORACLE_HOME: /usr/lib/oracle/11.2/client64/
+    LD_LIBRARY_PATH: $ORACLE_HOME/lib:/usr/local/lib:/usr/lib64
+    DYLD_LIBRARY_PATH: DYLD_LIBRARY_PATH=$ORACLE_HOME
+    PKG_CONFIG_PATH: /home/vagrant/pkgconfig
+  become_user: vagrant
+
+- name: build
+  command: go build
+  args:
+    chdir: /home/vagrant/go/src/github.com/freenetdigital/prometheus_oracle_exporter
+  environment:
+    PKG_CONFIG_PATH: /home/vagrant/pkgconfig
+  become_user: vagrant
+
+- name: move folder
+  synchronize:
+    src: "{{ item.src }}"
+    dest: "{{ item.dest }}"
+    checksum: yes
+    times: no
+  with_items:
+    -
+      src: /home/vagrant/go/src/github.com/freenetdigital/prometheus_oracle_exporter/prometheus_oracle_exporter
+      dest: /home/vagrant/goapp/oracle_exporter
+    -
+      src: /usr/lib/oracle/11.2/client64/lib/libclntsh.so.11.1
+      dest: /home/vagrant/goapp/libclntsh.so.11.1
+    -
+      src: /usr/lib/oracle/11.2/client64/lib/libclntsh.so
+      dest: /home/vagrant/goapp/libclntsh.so
+  delegate_to: "{{ inventory_hostname }}"
+
+
+- name: check
+  command: ./oracle_exporter
+  async: 30
+  poll: 0
+  args:
+    chdir: /home/vagrant/goapp/
+  register: check
+  become_user: vagrant
