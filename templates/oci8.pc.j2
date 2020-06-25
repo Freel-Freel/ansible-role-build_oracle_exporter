@@ -1,5 +1,5 @@
-libdir=/usr/lib/oracle/11.2/client64/lib
-includedir=/usr/include/oracle/11.2/client64
+libdir=/usr/lib/oracle/{{ oracle_instantclient_version }}/client64/lib
+includedir=/usr/include/oracle/{{ oracle_instantclient_version }}/client64
 
 glib_genmarshal=glib-genmarshal
 gobject_query=gobject-query
@@ -9,4 +9,4 @@ Name: oci8
 Description: oci8 library
 Libs: -L${libdir} -lclntsh
 Cflags: -I${includedir}
-Version: 11.2
+Version: {{ oracle_instantclient_version }}

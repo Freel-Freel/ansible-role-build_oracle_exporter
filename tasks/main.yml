@@ -1,23 +1,23 @@
 ---
 # tasks file for ansible-role-oracle_exporter
 
-- name: added repo 'epel-release'
-  yum:
-    name: epel-release
+- name: added repo 'epel-release,go'
+  package:
+    name: "{{ item }}"
     state: present
+  loop:
+    - epel-release
+    - go
   become_user: root
 
-- name: install 'go'
-  yum:
-    name: go
-    state: present
-  become_user: root
+- name: yum clean
+  meta: flush_handlers
 
 - name: create folders
   file:
     path: "/home/vagrant/{{ item }}"
     state: directory
-  with_items:
+  loop:
     - "pkgconfig"
     - "goapp"
     - "goapp/goapp"
@@ -29,7 +29,7 @@
   template:
     src: "{{ item.config }}.j2"
     dest: "{{ item.config_dst }}"
-  with_items:
+  loop:
     -
       config: oci8.pc
       config_dst: /home/vagrant/pkgconfig/oci8.pc
@@ -41,7 +41,7 @@
   command: go get -u -v github.com/freenetdigital/prometheus_oracle_exporter
   args:
   environment:
-    ORACLE_HOME: /usr/lib/oracle/11.2/client64/
+    ORACLE_HOME: /usr/lib/oracle/{{ oracle_instantclient_version }}/client64/
     LD_LIBRARY_PATH: $ORACLE_HOME/lib:/usr/local/lib:/usr/lib64
     DYLD_LIBRARY_PATH: DYLD_LIBRARY_PATH=$ORACLE_HOME
     PKG_CONFIG_PATH: /home/vagrant/pkgconfig
@@ -61,16 +61,19 @@
     dest: "{{ item.dest }}"
     checksum: yes
     times: no
-  with_items:
+  loop:
     -
       src: /home/vagrant/go/src/github.com/freenetdigital/prometheus_oracle_exporter/prometheus_oracle_exporter
       dest: /home/vagrant/goapp/oracle_exporter
     -
-      src: /usr/lib/oracle/11.2/client64/lib/libclntsh.so.11.1
-      dest: /home/vagrant/goapp/libclntsh.so.11.1
+      src: /usr/lib/oracle/{{ oracle_instantclient_version }}/client64/lib/libclntsh.so.19.1
+      dest: /home/vagrant/goapp/libclntsh.so.19.1
     -
-      src: /usr/lib/oracle/11.2/client64/lib/libclntsh.so
+      src: /usr/lib/oracle/{{ oracle_instantclient_version }}/client64/lib/libclntsh.so
       dest: /home/vagrant/goapp/libclntsh.so
+    -
+      src: /usr/lib/oracle/{{ oracle_instantclient_version }}/client64
+      dest: /home/vagrant/goapp/
   delegate_to: "{{ inventory_hostname }}"
 
 

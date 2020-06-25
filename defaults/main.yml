@@ -1,0 +1,5 @@
+---
+# defaults file for ansible-role-oracle_exporter
+
+# 18.3, 18.5, 19.3, 19.5 and 19.6
+oracle_instantclient_version: "19.3"
